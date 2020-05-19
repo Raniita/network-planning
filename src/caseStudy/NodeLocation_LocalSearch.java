@@ -247,7 +247,6 @@ public class NodeLocation_LocalSearch implements IAlgorithm {
         return res;
     }
 
-
     /* Function helper */
     // Interesting for reduce length of code
     public Optional<Link> addLink(Node accesNodeLocation, Node coreNodeLocation ){

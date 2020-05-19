@@ -1,14 +1,8 @@
 package caseStudy;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
+import java.util.*;
 
-import com.net2plan.interfaces.networkDesign.IAlgorithm;
-import com.net2plan.interfaces.networkDesign.Link;
-import com.net2plan.interfaces.networkDesign.NetPlan;
-import com.net2plan.interfaces.networkDesign.Node;
+import com.net2plan.interfaces.networkDesign.*;
 import com.net2plan.utils.Pair;
 import com.net2plan.utils.Triple;
 
@@ -80,11 +74,67 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
         /* Students code go here. It should leave the best solution found in the variable: bestSolutioFoundByTheAlgorithm */
 
+        /* Main Loop. Stopped when the maximum execution time is reached */
+        while(System.nanoTime() < algorithmEndTime){
 
+            // Problema1. Como codificar la solución
+            // Una especie de vector doble. Cada coordenada es localización de acceso
+            // Una coordenada para el firstCoreNode
+            // La otra para el secondCoreNode
+            // Parece ser interesante que sea una lista ordenada.
+            final int N = np.getNumberOfNodes();
+            // trying something (https://www.baeldung.com/java-graphs) (https://www.baeldung.com/java-multi-dimensional-arraylist)
+            ArrayList<ArrayList<Integer>> codSolution = new ArrayList<>(N);
 
+            // Init the codSolution
+            for(Node accesNode : np.getNodes()){
+                codSolution.add(new ArrayList<Integer>());
+            }
 
+            /* Init random solution */
+            final Random rng = new Random(1);
 
+            for(Node accessLocation : np.getNodes()){
+                // Location over we find core node
+                final int firstLocationCoreNodeIndex = rng.nextInt(N);
+                int secondLocationCoreNodeIndex = rng.nextInt(N);
+                // Cant be the same, wrong solution
+                while (firstLocationCoreNodeIndex == secondLocationCoreNodeIndex)
+                    secondLocationCoreNodeIndex = rng.nextInt(N);
 
+                // Adding Link on topology, and adding to codificate solution
+                addLink(accessLocation, np.getNode(firstLocationCoreNodeIndex));
+                add2CodificationSolution(codSolution, accessLocation.getIndex(), firstLocationCoreNodeIndex);
+                addLink(accessLocation, np.getNode(secondLocationCoreNodeIndex));
+                add2CodificationSolution(codSolution, accessLocation.getIndex(), secondLocationCoreNodeIndex);
+            }
+
+            // Evaluate the random solution
+            costBestSolutioFoundByTheAlgorithm = evaluateDesign(np,M,C).getFirst();
+
+            // Test codificate solution
+            printCodificationSolution(codSolution);
+
+            // Testing other way to codificate
+            System.out.println("new codification");
+            ArrayList<ArrayList<Integer>> codSolution2 = new ArrayList<>(N);
+            // Init the codSolution
+            for(Node accessNode : np.getNodes()){
+                codSolution2.add(new ArrayList<Integer>());
+            }
+            codificationSolution(np, codSolution2);
+            System.out.println("Second way to codificate");
+            printCodificationSolution(codSolution2);
+
+            System.out.println("Testing the recover function");
+            np.removeAllLinks();
+
+            System.out.println("Calling...");
+            recoverTopologyCostCodification(np, codSolution);
+            break;
+        }
+
+        bestSolutioFoundByTheAlgorithm = np.copy();
 
         /* Return the solution in bestSolutioFoundByTheAlgorithm */
         final double totalRunningTimeInSeconds = (System.nanoTime() - algorithmStartTime) / 1e9;
@@ -167,4 +217,64 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         res.add(Triple.of("maxExecTimeSecs", "60", "Maximum running time of the algorithm."));
         return res;
     }
+
+    /* UTILS FUNCTIONS */
+
+    // Optimize when adding Link over 2 Nodes.
+    public Optional<Link> addLink(Node accessNodeLocation, Node coreNodeLocation){
+        // Detect if access and core are using diferent instance of netplan
+        final NetPlan thisNetPlan = accessNodeLocation.getNetPlan();
+        if(!thisNetPlan.equals(coreNodeLocation.getNetPlan())) throw new Net2PlanException("Wrong net2plan object.");
+
+        // Check if is a autoloop. Wrong solution, not autoloop allow
+        if(accessNodeLocation.equals(coreNodeLocation)) return Optional.empty();
+
+        final Link createdLink = thisNetPlan.addLink(accessNodeLocation, coreNodeLocation, 1, 1, 200000, null);
+        return Optional.of(createdLink);
+    }
+
+    /* Trying to def costCodification (https://www.geeksforgeeks.org/graph-and-its-representations/) */
+    public void add2CodificationSolution(ArrayList<ArrayList<Integer>> costCod, int index, int Node){
+        costCod.get(index).add(Node);
+    }
+
+    /* More funct utils to solution codification */
+    public List<Integer> getPairCoreIndexCodificationSolution(ArrayList<ArrayList<Integer>> costCod, int accessNodeIndex){
+        final int firstNode =  costCod.get(accessNodeIndex).get(0);
+        final int secondNode = costCod.get(accessNodeIndex).get(1);
+
+        return Arrays.asList(firstNode,secondNode);
+    }
+
+    public static  void printCodificationSolution(ArrayList<ArrayList<Integer>> costCod){
+        for(int i=0; i<costCod.size();i++){
+            System.out.println("\nAccess Node: "+i);
+            for(int j=0;j < costCod.get(i).size();j++){
+                System.out.print("Core "+(j+1)+ ": " + costCod.get(i).get(j)+" ");
+            }
+            System.out.println();
+        }
+    }
+
+    /* Util to restore the topology over the info of the solution codificate*/
+    public void recoverTopologyCostCodification(NetPlan np, ArrayList<ArrayList<Integer>> costCod){
+        for(Node accessLocation : np.getNodes()){
+            final List<Integer> coreNodes = getPairCoreIndexCodificationSolution(costCod, accessLocation.getIndex());
+            addLink(accessLocation, np.getNode(coreNodes.get(0)));
+            addLink(accessLocation, np.getNode(coreNodes.get(1)));
+        }
+    }
+
+    public void codificationSolution(NetPlan np, ArrayList<ArrayList<Integer>> codification){
+        for(Node accessNodeLocation : np.getNodes()){
+            // Getting Locations
+            final int firstCoreLocation = accessNodeLocation.getOutgoingLinks().first().getDestinationNode().getIndex();
+            final int secondCoreLocation = accessNodeLocation.getOutgoingLinks().size() == 1? accessNodeLocation.getIndex() : accessNodeLocation.getOutgoingLinks().last().getDestinationNode().getIndex();
+
+            // Codification solution
+            add2CodificationSolution(codification, accessNodeLocation.getIndex(), firstCoreLocation);
+            add2CodificationSolution(codification, accessNodeLocation.getIndex(), secondCoreLocation);
+        }
+    }
+
 }
