@@ -3,6 +3,8 @@ package caseStudy;
 import java.util.*;
 
 import com.net2plan.interfaces.networkDesign.*;
+import com.net2plan.utils.Constants;
+import com.net2plan.utils.DoubleUtils;
 import com.net2plan.utils.Pair;
 import com.net2plan.utils.Triple;
 
@@ -69,10 +71,10 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
         /* Typically, the algorithm stores the best solution find so far,
          * which is the one to return when the running time reaches the user-defined limit */
-        NetPlan bestSolutioFoundByTheAlgorithm = np.copy();
+        NetPlan bestSolutionFoundByTheAlgorithm = np.copy();
         double costBestSolutioFoundByTheAlgorithm = Double.MAX_VALUE;
 
-        /* Students code go here. It should leave the best solution found in the variable: bestSolutioFoundByTheAlgorithm */
+        /* Students code go here. It should leave the best solution found in the variable: bestSolutionFoundByTheAlgorithm */
 
         /* Main Loop. Stopped when the maximum execution time is reached */
         while(System.nanoTime() < algorithmEndTime){
@@ -87,58 +89,66 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             ArrayList<ArrayList<Integer>> codSolution = new ArrayList<>(N);
 
             // Init the codSolution
-            for(Node accesNode : np.getNodes()){
-                codSolution.add(new ArrayList<Integer>());
-            }
+            //for(Node accesNode : np.getNodes()){
+            //    codSolution.add(new ArrayList<Integer>());
+            //}
 
             /* Init random solution */
             final Random rng = new Random(1);
 
-            for(Node accessLocation : np.getNodes()){
+            //for(Node accessLocation : np.getNodes()){
                 // Location over we find core node
-                final int firstLocationCoreNodeIndex = rng.nextInt(N);
-                int secondLocationCoreNodeIndex = rng.nextInt(N);
+            //    final int firstLocationCoreNodeIndex = rng.nextInt(N);
+            //    int secondLocationCoreNodeIndex = rng.nextInt(N);
                 // Cant be the same, wrong solution
-                while (firstLocationCoreNodeIndex == secondLocationCoreNodeIndex)
-                    secondLocationCoreNodeIndex = rng.nextInt(N);
+            //    while (firstLocationCoreNodeIndex == secondLocationCoreNodeIndex)
+            //        secondLocationCoreNodeIndex = rng.nextInt(N);
 
                 // Adding Link on topology, and adding to codificate solution
-                addLink(accessLocation, np.getNode(firstLocationCoreNodeIndex));
-                add2CodificationSolution(codSolution, accessLocation.getIndex(), firstLocationCoreNodeIndex);
-                addLink(accessLocation, np.getNode(secondLocationCoreNodeIndex));
-                add2CodificationSolution(codSolution, accessLocation.getIndex(), secondLocationCoreNodeIndex);
-            }
+            //    addLink(accessLocation, np.getNode(firstLocationCoreNodeIndex));
+            //    add2CodificationSolution(codSolution, accessLocation.getIndex(), firstLocationCoreNodeIndex);
+            //    addLink(accessLocation, np.getNode(secondLocationCoreNodeIndex));
+            //    add2CodificationSolution(codSolution, accessLocation.getIndex(), secondLocationCoreNodeIndex);
+            //}
 
             // Evaluate the random solution
-            costBestSolutioFoundByTheAlgorithm = evaluateDesign(np,M,C).getFirst();
+            //costBestSolutioFoundByTheAlgorithm = evaluateDesign(np,M,C).getFirst();
 
             // Test codificate solution
-            printCodificationSolution(codSolution);
+            //printCodificationSolution(codSolution);
 
             // Testing other way to codificate
-            System.out.println("new codification");
-            ArrayList<ArrayList<Integer>> codSolution2 = new ArrayList<>(N);
+            //System.out.println("new codification");
+            //ArrayList<ArrayList<Integer>> codSolution2 = new ArrayList<>(N);
             // Init the codSolution
-            for(Node accessNode : np.getNodes()){
-                codSolution2.add(new ArrayList<Integer>());
-            }
-            codificationSolution(np, codSolution2);
-            System.out.println("Second way to codificate");
-            printCodificationSolution(codSolution2);
+            //for(Node accessNode : np.getNodes()){
+            //    codSolution2.add(new ArrayList<Integer>());
+            //}
+            //codificationSolution(np, codSolution2);
+            //System.out.println("Second way to codificate");
+            //printCodificationSolution(codSolution2);
 
-            System.out.println("Testing the recover function");
-            np.removeAllLinks();
+            //System.out.println("Testing the recover function");
+            //np.removeAllLinks();
 
-            System.out.println("Calling...");
-            recoverTopologyCostCodification(np, codSolution);
+            System.out.println("Calling greedy algorithm...");
+            //recoverTopologyCostCodification(np, codSolution);
+
+            /* FIRST TRY ALGORITHM 1. GRASP */
+            final List<Node> shuffleNodes = new ArrayList<>(np.getNodes());
+            Collections.shuffle(shuffleNodes, rng);
+
+            // GREEDY
+            final double alpha = 0.25;
+            computeGreedyRandomized(np, rng, N, alpha);
             break;
         }
 
-        bestSolutioFoundByTheAlgorithm = np.copy();
+        bestSolutionFoundByTheAlgorithm = np.copy();
 
-        /* Return the solution in bestSolutioFoundByTheAlgorithm */
+        /* Return the solution in bestSolutionFoundByTheAlgorithm */
         final double totalRunningTimeInSeconds = (System.nanoTime() - algorithmStartTime) / 1e9;
-        np.assignFrom(bestSolutioFoundByTheAlgorithm); // this line is for storing in the np variable (the design to return), the best solution found
+        np.assignFrom(bestSolutionFoundByTheAlgorithm); // this line is for storing in the np variable (the design to return), the best solution found
         final Pair<Double,Integer> returnedDesignInfo = evaluateDesign(np, M, C); // compute the cost and number of core nodes, to return it, and check the design validity
         final double returnedDesignCost = returnedDesignInfo.getFirst();
         final int returnedDesignNumCoreNodes = returnedDesignInfo.getSecond();
@@ -234,8 +244,8 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
     }
 
     /* Trying to def costCodification (https://www.geeksforgeeks.org/graph-and-its-representations/) */
-    public void add2CodificationSolution(ArrayList<ArrayList<Integer>> costCod, int index, int Node){
-        costCod.get(index).add(Node);
+    public void add2CodificationSolution(ArrayList<ArrayList<Integer>> costCod, int index, int nodeIndex){
+        costCod.get(index).add(nodeIndex);
     }
 
     /* More funct utils to solution codification */
@@ -275,6 +285,201 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             add2CodificationSolution(codification, accessNodeLocation.getIndex(), firstCoreLocation);
             add2CodificationSolution(codification, accessNodeLocation.getIndex(), secondCoreLocation);
         }
+    }
+
+    public int getNextAccessNodeGreedy(List<Integer> notVisited, Random rng){
+        // Values with -1 are used, not count on the pool
+        List<Integer> randomList = new ArrayList<>();
+        for(int i=0; i<notVisited.size();i++){
+            if(notVisited.get(i)==-1) continue;
+            randomList.add(notVisited.get(i));
+        }
+
+        return randomList.get(rng.nextInt(randomList.size()));
+    }
+
+    public void computeGreedyRandomized(NetPlan np, Random rng, int N, double alpha){
+        System.out.println("\n\n\n");
+
+        /* Greedy Randomized (Diversificación) */
+        ArrayList<ArrayList<Integer>> greedySolution = new ArrayList<>(N);
+        for(Node accessNode : np.getNodes()){
+            greedySolution.add(new ArrayList<Integer>());
+        }
+
+        // Funcionamiento greedy, construimos poco a poco minimizando el coste del enlace.
+        // No olvidar las reestricciones del problema
+
+        // try greedy1
+        //double alpha = 0.25;
+        ArrayList<Integer> nodeSequence = new ArrayList<Integer>(N);
+        final int initialNode = rng.nextInt(N);
+        nodeSequence.add(initialNode);
+
+        // List of all coreNode candidates
+        HashSet<Integer> notVisitedCoreNode = new LinkedHashSet<Integer>();
+        for(int i=0;i<N;i++){
+            notVisitedCoreNode.add(i);
+        }
+
+        List<Integer> notVisitedAccessNode = new ArrayList<Integer>(N);
+        for(Node node : np.getNodes())
+            notVisitedAccessNode.add(node.getIndex());
+
+        List<Integer> eliminatedCoreNodes = new ArrayList<Integer>(N);
+
+        // usedCoreNode count
+        List<Integer> usedCoreNode = new ArrayList<Integer>(N);
+        for(Node node : np.getNodes()){
+            // Filling with zero values
+            System.out.println(node.getIndex());
+            usedCoreNode.add(node.getIndex(),0);
+        }
+
+        double nodeSequenceCost = 0;
+        int countRemoves = 1;
+        while (nodeSequence.size() < N | notVisitedCoreNode.isEmpty() | notVisitedCoreNode.size() == 0 | notVisitedAccessNode.size() == 0){
+            /* Create a list with the costs of possible next nodes */
+            final int indexAccessNode = nodeSequence.get(nodeSequence.size() - 1);
+            System.out.println("INDEX: "+indexAccessNode);
+            final Node accessNode = np.getNode(indexAccessNode);
+            //double[] costs = new double[notVisitedCoreNode.size()];
+            //int[] nextNodes = new int[notVisitedCoreNode.size()];
+            double[] costs = new double[N];
+            int[] nextNodes = new int[N];
+            System.out.println("Start info. indexAcc:"+indexAccessNode+" costsSize: "+costs.length+" nextNodesSize: "+nextNodes.length+" notVisited:"+notVisitedCoreNode.size());
+            System.out.println("notVisitedAccessNode:"+notVisitedAccessNode.size());
+
+            int counter = 0;
+            for(Node coreNode: np.getNodes()){
+                //final Node coreNode = np.getNode(indexCoreNode);
+                final int indexCoreNode = coreNode.getIndex();
+                if(eliminatedCoreNodes.contains(indexCoreNode)){
+                    System.out.println("CACA");
+                    costs[counter] = Double.MAX_VALUE;
+                } else if(coreNode == accessNode){
+                    costs[counter] = Double.MAX_VALUE;
+                } else {
+                    costs[counter] = getCostAccessLink(accessNode, coreNode);
+                }
+
+                //if(indexCoreNode == indexAccessNode) System.out.println("CACA");   // Fixing the gap created on visitedNode
+                //if(coreNode == accessNode){
+                //    costs[counter]=Double.MAX_VALUE;
+                //} else {
+                //    costs[counter] = getCostAccessLink(accessNode, coreNode);
+                //}
+                nextNodes[counter] = indexCoreNode;
+                System.out.println(counter + " | costs: " + costs[counter] + " nextNodes: " + nextNodes[counter]);
+                counter++;
+            }
+
+            /* Order the list of possible next nodes according to its cost */
+            int[] orderedNextNodeIndexes = DoubleUtils.sortIndexes(costs, Constants.OrderingType.ASCENDING);
+            System.out.println("orderedNexNode:" +orderedNextNodeIndexes.length);
+            System.out.println("maxCost1(el malo): "+costs[orderedNextNodeIndexes[orderedNextNodeIndexes.length-1]]+" maxCost2:"+ costs[orderedNextNodeIndexes[orderedNextNodeIndexes.length-2]]);
+
+            /* Compute the number of elements in the restricted next node list */
+            final double minCost = costs[orderedNextNodeIndexes[0]];
+            // maxCost == N-1, but we skip the coreNode==accessNode with Double.MAX_VALUE so => -2
+            System.out.println("orderedNex1: " + Arrays.toString(orderedNextNodeIndexes));
+            System.out.println("eliminatedCoreNodes: "+eliminatedCoreNodes.size()+" indexMax: "+(orderedNextNodeIndexes.length-2-eliminatedCoreNodes.size()));
+            System.out.println("costsSize: "+costs.length);
+            final double maxCost = costs[orderedNextNodeIndexes[orderedNextNodeIndexes.length-2-eliminatedCoreNodes.size()]];
+            final double thresholdCost = minCost + alpha * (maxCost - minCost);
+            int numberLinksInRCL = 0;
+            countRemoves++;
+
+            System.out.println("Min: "+minCost+" Max: "+maxCost+" Thresh: "+thresholdCost);
+            // Looking for the max number for threshold
+            System.out.println("nextNodes:" + Arrays.toString(nextNodes));
+            System.out.println("orderedNex2: " + Arrays.toString(orderedNextNodeIndexes));
+
+            List<Integer> RCL = new ArrayList<>();
+            for(int index : orderedNextNodeIndexes){
+                final int nextCoreNode = orderedNextNodeIndexes[index];
+                //System.out.println("nextCoreNode: "+nextCoreNode);
+                if(nextCoreNode == indexAccessNode) continue;
+                if(eliminatedCoreNodes.contains(nextCoreNode)) continue;
+                if(costs[nextCoreNode] > thresholdCost) continue;
+                RCL.add(nextCoreNode);
+            }
+
+            System.out.println("RCL:"+RCL.toString());
+
+            /* The next node is chosen randomly in the restricted next node list */
+
+            // Hacking things
+            //notVisitedAccessNode.remove(accessNode.getIndex());
+            notVisitedAccessNode.set(accessNode.getIndex(), -1);
+            System.out.println(notVisitedAccessNode.toString());
+            final int nextAccessNode = getNextAccessNodeGreedy(notVisitedAccessNode, rng);
+            //System.out.println("el siguiente seria: " +nextAccessNode);
+
+            // Chosen randomly the nextCore
+            //final int nextCoreNode1 = nextNodes[rng.nextInt(numberLinksInRCL)];
+            //int nextCoreNode2 = nextNodes[rng.nextInt(numberLinksInRCL)];
+            //if they are the same
+            //while(nextCoreNode1 == nextCoreNode2)
+             //   nextCoreNode2 = nextNodes[rng.nextInt(numberLinksInRCL)];
+            System.out.println("ping");
+            int nextCoreNode1;
+            int nextCoreNode2;
+            if(RCL.size() == 1){
+                nextCoreNode1 = RCL.get(RCL.size()-1);
+                nextCoreNode2 = -1;
+            } else {
+                nextCoreNode1 = RCL.get(rng.nextInt(RCL.size()));
+                nextCoreNode2 = RCL.get(rng.nextInt(RCL.size()));
+                while(nextCoreNode1 == nextCoreNode2)
+                    nextCoreNode2 = RCL.get(rng.nextInt(RCL.size()));
+            }
+
+            System.out.println("pong");
+            //nodeSequence.add(nextCoreNode1);
+            //nodeSequence.add(nextCoreNode2);
+
+            //notVisitedCoreNode.remove(accessNode.getIndex());
+
+            // AccessNode
+            nodeSequence.add(nextAccessNode);
+
+            // CoreNode1
+            int incrementUsedCoreNode1 = usedCoreNode.get(nextCoreNode1);
+            usedCoreNode.set(nextCoreNode1, incrementUsedCoreNode1+1);
+            if(usedCoreNode.get(nextCoreNode1) > 4){
+                notVisitedCoreNode.remove(nextCoreNode1);
+                eliminatedCoreNodes.add(nextCoreNode1);
+            }
+            //notVisitedCoreNode.remove(nextCoreNode1);
+            //eliminatedCoreNodes.add(nextCoreNode1);
+            nodeSequenceCost += costs[nextCoreNode1];
+            addLink(accessNode, np.getNode(nextCoreNode1));
+            // Adding to codificated solution
+            System.out.println("Solution added, coreIndex: " + nextCoreNode1);
+            add2CodificationSolution(greedySolution, accessNode.getIndex(), nextCoreNode1);
+
+            // CoreNode2
+            if(nextCoreNode2 != -1){
+                int incrementUsedCoreNode2 = usedCoreNode.get(nextCoreNode2);
+                usedCoreNode.set(nextCoreNode2, incrementUsedCoreNode2+1);
+                if(usedCoreNode.get(nextCoreNode2) > 4){
+                    notVisitedCoreNode.remove(nextCoreNode2);
+                    eliminatedCoreNodes.add(nextCoreNode2);
+                }
+                nodeSequenceCost += costs[nextCoreNode2];
+                addLink(accessNode, np.getNode(nextCoreNode2));
+                System.out.println("Solution added, coreIndex: " + nextCoreNode2);
+                // Adding to codificated solution
+                add2CodificationSolution(greedySolution, accessNode.getIndex(), nextCoreNode2);
+            }
+
+            System.out.println(eliminatedCoreNodes.toString());
+        }
+
+        // Here may have a solution greedy randomized
+        printCodificationSolution(greedySolution);
+        //return  greedySolution;
     }
 
 }

@@ -71,7 +71,7 @@ public class NodeLocation_LocalSearch implements IAlgorithm {
         /* Typically, the algorithm stores the best solution find so far,
          * which is the one to return when the running time reaches the user-defined limit */
         NetPlan bestSolutioFoundByTheAlgorithm = np.copy();
-        double costBestSolutioFoundByTheAlgorithm = Double.MAX_VALUE;
+        double costBestSolutionFoundByTheAlgorithm = Double.MAX_VALUE;
 
         /* Students code go here. It should leave the best solution found in the variable: bestSolutioFoundByTheAlgorithm */
 
@@ -98,7 +98,7 @@ public class NodeLocation_LocalSearch implements IAlgorithm {
             addLink(accessLocation, np.getNode(secondLocationCoreNodeIndex));
         }
         // Evaluating the random solution
-        costBestSolutioFoundByTheAlgorithm = evaluateDesign(np,M,C).getFirst();
+        costBestSolutionFoundByTheAlgorithm = evaluateDesign(np,M,C).getFirst();
 
         /* Main loop of local search */
         final List<Node> shuffleNodes = new ArrayList<>(np.getNodes());
@@ -110,7 +110,7 @@ public class NodeLocation_LocalSearch implements IAlgorithm {
         mainLocalSearchLoop:
         while (solutionWasImproved){
             // To print how to the solutions were improved
-            System.out.println("Local Search Loop:" + costBestSolutioFoundByTheAlgorithm);
+            System.out.println("Local Search Loop:" + costBestSolutionFoundByTheAlgorithm);
             solutionWasImproved = false;
 
             /* One local search iteration */
@@ -144,8 +144,8 @@ public class NodeLocation_LocalSearch implements IAlgorithm {
                         final Optional<Link> newLinkCreated = addLink(accessLocation, diffCoreNode);
                         // USING FIRST FIT
                         final double costNeighborSolution = evaluateDesign(np, M, C).getFirst();
-                        if(costNeighborSolution < costBestSolutioFoundByTheAlgorithm){
-                            costBestSolutioFoundByTheAlgorithm = costNeighborSolution;
+                        if(costNeighborSolution < costBestSolutionFoundByTheAlgorithm){
+                            costBestSolutionFoundByTheAlgorithm = costNeighborSolution;
                             solutionWasImproved = true;
 
                             // New thing, someones thinks that the code its less readable
