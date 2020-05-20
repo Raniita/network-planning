@@ -294,6 +294,10 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             if(notVisited.get(i)==-1) continue;
             randomList.add(notVisited.get(i));
         }
+        // If all values are -1, so we are finished the alg. Not need to getNextNode
+        System.out.println("rngNextAccess: "+randomList.toString());
+        if(randomList.size() == 0)
+            return -1;
 
         return randomList.get(rng.nextInt(randomList.size()));
     }
@@ -338,7 +342,8 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
         double nodeSequenceCost = 0;
         int countRemoves = 1;
-        while (nodeSequence.size() < N | notVisitedCoreNode.isEmpty() | notVisitedCoreNode.size() == 0 | notVisitedAccessNode.size() == 0){
+        //while (nodeSequence.size() < N | notVisitedCoreNode.isEmpty() | notVisitedCoreNode.size() == 0 | notVisitedAccessNode.size() == 0){
+         while (nodeSequence.size() < (N+1)  | notVisitedCoreNode.size() == 0 | notVisitedAccessNode.size() == 0){
             /* Create a list with the costs of possible next nodes */
             final int indexAccessNode = nodeSequence.get(nodeSequence.size() - 1);
             System.out.println("INDEX: "+indexAccessNode);
@@ -414,6 +419,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             notVisitedAccessNode.set(accessNode.getIndex(), -1);
             System.out.println(notVisitedAccessNode.toString());
             final int nextAccessNode = getNextAccessNodeGreedy(notVisitedAccessNode, rng);
+            System.out.println("nextAccessNode: "+nextAccessNode);
             //System.out.println("el siguiente seria: " +nextAccessNode);
 
             // Chosen randomly the nextCore
@@ -475,6 +481,16 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             }
 
             System.out.println(eliminatedCoreNodes.toString());
+
+            System.out.println("Condiciones del while:");
+            //nodeSequence.size() < N | notVisitedCoreNode.isEmpty() | notVisitedCoreNode.size() == 0 | notVisitedAccessNode.size() == 0
+            System.out.println("nodeSeq: "+nodeSequence.size()+" notVisitedCore: "+notVisitedCoreNode.isEmpty()+" notVisitedCoreSize: "+notVisitedCoreNode.size()+" notVisitedAccessSize: "+notVisitedAccessNode.size());
+
+             // Check if we are on the last AccessNode iteration
+             if(nextAccessNode == -1){
+                 System.out.println("breaking greedy. finished");
+                 break;
+             }
         }
 
         // Here may have a solution greedy randomized
