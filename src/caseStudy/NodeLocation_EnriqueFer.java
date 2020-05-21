@@ -521,4 +521,61 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         //return  greedySolution;
     }
 
+    /* Over a init solution, apply a local search first-fit based to intensify the cost solution */
+    public void computeLocalSearchStep(NetPlan np, Random rng, int M, double C, ArrayList<ArrayList<Integer>> greedySolution){
+        /* Parsing some values */
+        double costBestSolution = Double.MAX_VALUE;
+        // Shuffle Nodes. More intensification
+        final List<Node> shuffleNodes = new ArrayList<>(np.getNodes());
+        Collections.shuffle(shuffleNodes, rng);
+
+        /* Executing Local Search Iteration */
+        boolean solutionWasImproved = true;
+        localSearchLoop:
+        while (solutionWasImproved){
+            solutionWasImproved = false;
+
+            // Local Search Iteration
+            // Working with actual np state
+            for(Node accessNode : shuffleNodes){
+                // Getting coreNode connecteds
+                final Node coreNode1Original = accessNode.getOutgoingLinks().first().getDestinationNode();
+                final Node coreNode2Original = accessNode.getOutgoingLinks().size() == 1 ? accessNode : accessNode.getOutgoingLinks().last().getDestinationNode();
+
+                // We can change both coreNodes
+                for(Node originalCoreNode : new Node[]{coreNode1Original, coreNode2Original}){
+                    // Remove the current link (access -> core)
+                    final boolean isSelfLocation = accessNode.equals(originalCoreNode);
+                    final Link removedLink = isSelfLocation ? null : np.getNodePairLinks(accessNode,originalCoreNode, false).first();
+
+                    if(removedLink != null) removedLink.remove();
+                    for(Node tryCore : shuffleNodes){
+                        if(tryCore.equals(coreNode1Original)) continue;
+                        if(tryCore.equals(coreNode2Original)) continue;
+                        final Optional<Link> newLink = addLink(accessNode, tryCore);
+                        final double costNeighbor = evaluateDesign(np, M, C).getFirst();
+
+                        // First-Fit
+                        if(costNeighbor < costBestSolution){
+                            costBestSolution = costNeighbor;
+                            solutionWasImproved = true;
+
+                            // Here saved to codified solution
+
+                            // breaking the local-search
+                            // dislike this uwu
+                            continue localSearchLoop;
+                        }
+                        if(newLink.isPresent()) newLink.get().remove();
+                    }
+
+                    // Need to go back
+                    if(removedLink != null) addLink(accessNode, originalCoreNode);
+                }
+            }
+        }
+
+        // Here finish the local search iteration
+
+    }
 }
