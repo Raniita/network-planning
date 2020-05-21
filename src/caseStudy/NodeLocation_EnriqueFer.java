@@ -1,5 +1,6 @@
 package caseStudy;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 import com.net2plan.interfaces.networkDesign.*;
@@ -72,19 +73,26 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         /* Typically, the algorithm stores the best solution find so far,
          * which is the one to return when the running time reaches the user-defined limit */
         NetPlan bestSolutionFoundByTheAlgorithm = np.copy();
-        double costBestSolutioFoundByTheAlgorithm = Double.MAX_VALUE;
+        double costBestSolutionFoundByTheAlgorithm = Double.MAX_VALUE;
 
         /* Students code go here. It should leave the best solution found in the variable: bestSolutionFoundByTheAlgorithm */
 
         /* Init random solution */
         final Random rng = new Random(1);
 
-        NetPlan greedyRandSolution = np.copy();
+        final int N = np.getNumberOfNodes();
+
+        //NetPlan greedyRandSolution = np.copy();
+
+        /* Init best solution */
+        ArrayList<ArrayList<Integer>> initSolution = new ArrayList<>(N);
+        for(Node node : np.getNodes()){
+            initSolution.add(new ArrayList<Integer>());
+        }
+        Pair<ArrayList<ArrayList<Integer>>, Double> bestSolutionEncoded = Pair.of(initSolution, costBestSolutionFoundByTheAlgorithm);
 
         /* Main Loop. Stopped when the maximum execution time is reached */
         while(System.nanoTime() < algorithmEndTime){
-            final int N = np.getNumberOfNodes();
-
             // Problema1. Como codificar la solución
             // Una especie de vector doble. Cada coordenada es localización de acceso
             // Una coordenada para el firstCoreNode
@@ -115,7 +123,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             //}
 
             // Evaluate the random solution
-            //costBestSolutioFoundByTheAlgorithm = evaluateDesign(np,M,C).getFirst();
+            //costBestSolutionFoundByTheAlgorithm = evaluateDesign(np,M,C).getFirst();
 
             // Test codificate solution
             //printCodificationSolution(codSolution);
@@ -142,32 +150,68 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             /* FIRST TRY ALGORITHM 1. GRASP */
 
             // GREEDY
+            // TODO: move to parameters of net2plan
             final double alpha = 0.25;
 
             // Executing GreedyRandomized with alpha
-            computeGreedyRandomized(np, rng, N, alpha, M);
+            // TODO: should add a parameters know as verbose, activate/deactivate the debug output
+            Pair<ArrayList<ArrayList<Integer>>, Double> greedySolution = computeGreedyRandomized(np, rng, N, alpha, M, C);
 
             // Saving actual solution to codified solution
-            ArrayList<ArrayList<Integer>> greedyRandSolutionCodified = new ArrayList<>(N);
-            for(Node node : np.getNodes()){
-                greedyRandSolutionCodified.add(new ArrayList<Integer>());
-            }
-            codificationSolution(np, greedyRandSolutionCodified);
+            // TODO: change to Pair<> with codified solution and cost of the solution
+            //ArrayList<ArrayList<Integer>> greedyRandSolutionCodified = new ArrayList<>(N);
+            //for(Node node : np.getNodes()){
+            //    greedyRandSolutionCodified.add(new ArrayList<Integer>());
+            //}
+            //codificationSolution(np, greedyRandSolutionCodified);
 
             // Getting total cost
-            greedyRandSolution = np.copy();
-            final double costGreedyRandSolution = evaluateDesign(greedyRandSolution, M, C).getFirst();
+            //greedyRandSolution = np.copy();
+            //final double costGreedyRandSolution = evaluateDesign(greedyRandSolution, M, C).getFirst();
 
             // Printing GreedySolution
-            System.out.println("costGreedySolution: "+ costGreedyRandSolution);
-            printCodificationSolution(greedyRandSolutionCodified);
+            System.out.println("costGreedySolution: "+ greedySolution.getSecond());
+            //printCodificationSolution(greedySolution.getFirst());
 
             /*  */
-            np.removeAllLinks();
+            //np.removeAllLinks();
             //break;
+
+            /* Calling Local Search*/
+            //computeLocalSearchStep(np, rng, M, C, greedyRandSolutionCodified);
+            Pair<ArrayList<ArrayList<Integer>>, Double> localSearchSolution = computeLocalSearchStep(np, rng, N, M, C, greedySolution.getFirst());
+
+            // Printing the localSearch output
+            System.out.println("costLocalSearch: "+localSearchSolution.getSecond());
+            //printCodificationSolution(localSearchSolution.getFirst());
+
+            // TODO: check if localSearch improve the best solution found ever
+            if(localSearchSolution.getSecond() < costBestSolutionFoundByTheAlgorithm){
+                // Updating best solution
+                System.out.println("IMPROVED!! Updating bestSolution.");
+                bestSolutionFoundByTheAlgorithm = np.copy();
+                costBestSolutionFoundByTheAlgorithm = localSearchSolution.getSecond();
+                //final ArrayList<ArrayList<Integer>> newBestSolution = encodeSolution(np,N);
+
+
+                bestSolutionEncoded.setFirst(encodeSolution(np,N));
+                bestSolutionEncoded.setSecond(costBestSolutionFoundByTheAlgorithm);
+                //printCodificationSolution(bestSolutionEncoded.getFirst());
+            }
+
+            //bestSolutionFoundByTheAlgorithm = np.copy();
+            // Only execute one iteration of GRASP
+            //break;
+
+            /* RESET! Go to the init topology */
+            np.removeAllLinks();
         }
 
-        bestSolutionFoundByTheAlgorithm = greedyRandSolution.copy();
+        //bestSolutionFoundByTheAlgorithm = .copy();
+
+        /* Printing the bestSolution Found!*/
+        System.out.println("Finished!. Cost: "+bestSolutionEncoded.getSecond());
+        printCodificationSolution(bestSolutionEncoded.getFirst());
 
         /* Return the solution in bestSolutionFoundByTheAlgorithm */
         final double totalRunningTimeInSeconds = (System.nanoTime() - algorithmStartTime) / 1e9;
@@ -298,16 +342,25 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         }
     }
 
-    public void codificationSolution(NetPlan np, ArrayList<ArrayList<Integer>> codification){
+    public ArrayList<ArrayList<Integer>> encodeSolution(NetPlan np, int N){
+        // Init the empty solution
+        ArrayList<ArrayList<Integer>> solution = new ArrayList<>(N);
+        for(Node node :  np.getNodes()){
+            solution.add(new ArrayList<Integer>());
+        }
+
+        // Filling the solution with NetPlan actual canvas
         for(Node accessNodeLocation : np.getNodes()){
             // Getting Locations
             final int firstCoreLocation = accessNodeLocation.getOutgoingLinks().first().getDestinationNode().getIndex();
             final int secondCoreLocation = accessNodeLocation.getOutgoingLinks().size() == 1? accessNodeLocation.getIndex() : accessNodeLocation.getOutgoingLinks().last().getDestinationNode().getIndex();
 
             // Codification solution
-            add2CodificationSolution(codification, accessNodeLocation.getIndex(), firstCoreLocation);
-            add2CodificationSolution(codification, accessNodeLocation.getIndex(), secondCoreLocation);
+            add2CodificationSolution(solution, accessNodeLocation.getIndex(), firstCoreLocation);
+            add2CodificationSolution(solution, accessNodeLocation.getIndex(), secondCoreLocation);
         }
+
+        return solution;
     }
 
     public int getNextAccessNodeGreedy(List<Integer> notVisited, Random rng){
@@ -325,7 +378,8 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         return randomList.get(rng.nextInt(randomList.size()));
     }
 
-    public void computeGreedyRandomized(NetPlan np, Random rng, int N, double alpha, int M){
+    // TODO: Remove the useless comments and println :D
+    public Pair<ArrayList<ArrayList<Integer>>,Double> computeGreedyRandomized(NetPlan np, Random rng, int N, double alpha, int M, double C){
         System.out.println("\n\n\n");
 
         /* Greedy Randomized (Diversificación) */
@@ -519,10 +573,13 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         // Here may have a solution greedy randomized
         printCodificationSolution(greedySolution);
         //return  greedySolution;
+        final double greedyCost = evaluateDesign(np, M, C).getFirst();
+
+        return Pair.of(greedySolution,greedyCost);
     }
 
     /* Over a init solution, apply a local search first-fit based to intensify the cost solution */
-    public void computeLocalSearchStep(NetPlan np, Random rng, int M, double C, ArrayList<ArrayList<Integer>> greedySolution){
+    public Pair<ArrayList<ArrayList<Integer>>, Double> computeLocalSearchStep(NetPlan np, Random rng, int N, int M, double C, ArrayList<ArrayList<Integer>> greedySolution){
         /* Parsing some values */
         double costBestSolution = Double.MAX_VALUE;
         // Shuffle Nodes. More intensification
@@ -577,5 +634,11 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
         // Here finish the local search iteration
 
+        // Saving the encoded solution
+        ArrayList<ArrayList<Integer>> localSearchSolution = encodeSolution(np, N);
+        final double localSearchCost = evaluateDesign(np, M, C).getFirst();
+
+        // Returning the pair of encoded solution and cost
+        return Pair.of(localSearchSolution,localSearchCost);
     }
 }
