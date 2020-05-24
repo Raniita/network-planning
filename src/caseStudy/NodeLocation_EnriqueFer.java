@@ -77,6 +77,11 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
         /* Students code go here. It should leave the best solution found in the variable: bestSolutionFoundByTheAlgorithm */
 
+        /* Pulling my specific algorithm parameters */
+        final double alpha = Double.parseDouble(algorithmParams.get("alpha"));
+        final boolean verbose = Boolean.parseBoolean(algorithmParams.get("verbose"));
+
+        // TODO: Maybe insert seed as a parameter?
         /* Init random solution */
         final Random rng = new Random(1);
 
@@ -84,13 +89,14 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
         //NetPlan greedyRandSolution = np.copy();
 
-        /* Init best solution */
+        /* Filling the init best solution */
         ArrayList<ArrayList<Integer>> initSolution = new ArrayList<>(N);
         for(Node node : np.getNodes()){
             initSolution.add(new ArrayList<Integer>());
         }
         Pair<ArrayList<ArrayList<Integer>>, Double> bestSolutionEncoded = Pair.of(initSolution, costBestSolutionFoundByTheAlgorithm);
 
+        // TODO: Add a temporary ping pong time checker to estimate the average time over a greedy iteration. Trying to be fine with the 60secs
         /* Main Loop. Stopped when the maximum execution time is reached */
         while(System.nanoTime() < algorithmEndTime){
             // Problema1. Como codificar la solución
@@ -151,7 +157,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
             // GREEDY
             // TODO: move to parameters of net2plan
-            final double alpha = 0.25;
+            //final double alpha = 0.25;
 
             // Executing GreedyRandomized with alpha
             // TODO: should add a parameters know as verbose, activate/deactivate the debug output
@@ -209,7 +215,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
         //bestSolutionFoundByTheAlgorithm = .copy();
 
-        /* Printing the bestSolution Found!*/
+        /* Printing the bestSolution Found! */
         System.out.println("Finished!. Cost: "+bestSolutionEncoded.getSecond());
         printCodificationSolution(bestSolutionEncoded.getFirst());
 
@@ -282,7 +288,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
     @Override
     public String getDescription()
     {
-        return "This algorithm is a template for developing the node location algorithm. Please, use it!";
+        return "Initially an algorithm template but already its a complete algorithm OwO! Solution implemented with GRASP method";
     }
 
     @Override
@@ -292,12 +298,14 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         res.add(Triple.of("M", "5", "Maximum number of access nodes that can be connceted to a single core node."));
         res.add(Triple.of("C", "100", "The cost of a core node."));
         res.add(Triple.of("maxExecTimeSecs", "60", "Maximum running time of the algorithm."));
+        res.add(Triple.of("alpha", "0.25", "Randomized parameter to GRASP based on RCL"));
+        res.add(Triple.of("verbose", "1", "Print debug messages on output console (0 == disable, 1 == enable)"));
         return res;
     }
 
-    /* UTILS FUNCTIONS */
+    /** UTILS FUNCTIONS */
 
-    // Optimize when adding Link over 2 Nodes.
+    /** Snippet for create a link between 2 nodes (Given by the teacher :D)*/
     public Optional<Link> addLink(Node accessNodeLocation, Node coreNodeLocation){
         // Detect if access and core are using diferent instance of netplan
         final NetPlan thisNetPlan = accessNodeLocation.getNetPlan();
@@ -310,12 +318,15 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         return Optional.of(createdLink);
     }
 
-    /* Trying to def costCodification (https://www.geeksforgeeks.org/graph-and-its-representations/) */
+    /**
+     * Encoding part by part the solution. Given a encoded solution, add CoreNode to an AccessNode
+     * First approach to costCodification encoding solution
+     * Source: (https://www.geeksforgeeks.org/graph-and-its-representations/) */
     public void add2CodificationSolution(ArrayList<ArrayList<Integer>> costCod, int index, int nodeIndex){
         costCod.get(index).add(nodeIndex);
     }
 
-    /* More funct utils to solution codification */
+    /** Help function to get the Core Nodes associated to a Access Node (given a encoded solution and the AccessIndex) */
     public List<Integer> getPairCoreIndexCodificationSolution(ArrayList<ArrayList<Integer>> costCod, int accessNodeIndex){
         final int firstNode =  costCod.get(accessNodeIndex).get(0);
         final int secondNode = costCod.get(accessNodeIndex).get(1);
@@ -323,7 +334,8 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         return Arrays.asList(firstNode,secondNode);
     }
 
-    public static  void printCodificationSolution(ArrayList<ArrayList<Integer>> costCod){
+    /** Help function to print a encoded solution*/
+    public static void printCodificationSolution(ArrayList<ArrayList<Integer>> costCod){
         for(int i=0; i<costCod.size();i++){
             System.out.println("\nAccess Node: "+i);
             for(int j=0;j < costCod.get(i).size();j++){
@@ -333,7 +345,9 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         }
     }
 
-    /* Util to restore the topology over the info of the solution codificate*/
+    /**
+     * Given a Encoded Solution, add to NetPlan all the links listed on it.
+     * Util to restore the topology over the info of the solution encoded */
     public void recoverTopologyCostCodification(NetPlan np, ArrayList<ArrayList<Integer>> costCod){
         for(Node accessLocation : np.getNodes()){
             final List<Integer> coreNodes = getPairCoreIndexCodificationSolution(costCod, accessLocation.getIndex());
@@ -342,6 +356,11 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         }
     }
 
+    /**
+     * Function to encode the solution of the algorithm
+     * In args -> NetPlan object and number of nodes
+     * Output, a solution encoded. 1 AccessNode -> 2 CoreNode associated
+     * Source: (https://www.baeldung.com/java-graphs [Adjacency List]) (https://www.baeldung.com/java-multi-dimensional-arraylist) */
     public ArrayList<ArrayList<Integer>> encodeSolution(NetPlan np, int N){
         // Init the empty solution
         ArrayList<ArrayList<Integer>> solution = new ArrayList<>(N);
@@ -363,6 +382,10 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         return solution;
     }
 
+    /**
+     * Help function for greedy randomized algorithm
+     * Given a list with the Nodes not visited and a random object, generate the next node to go
+     * Disclaimer: the value -1 its used as a flag for the node that is already visited */
     public int getNextAccessNodeGreedy(List<Integer> notVisited, Random rng){
         // Values with -1 are used, not count on the pool
         List<Integer> randomList = new ArrayList<>();
@@ -378,7 +401,15 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         return randomList.get(rng.nextInt(randomList.size()));
     }
 
-    // TODO: Remove the useless comments and println :D
+    // TODO: Remove the useless comments and println :D or change it to verbose things
+    /** Greedy Randomized Logic, using RCL decision
+     * Input: NetPlan np
+     *        Random rng,
+     *        N number of nodes,
+     *        alpha as 0 to 1 value to randomize the alg,
+     *        M max of connection on core nodes,
+     *        C cost of core node
+     * Output: Pair of values => encoded solution (first) cost of encoded solution (second) */
     public Pair<ArrayList<ArrayList<Integer>>,Double> computeGreedyRandomized(NetPlan np, Random rng, int N, double alpha, int M, double C){
         System.out.println("\n\n\n");
 
@@ -578,7 +609,11 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         return Pair.of(greedySolution,greedyCost);
     }
 
-    /* Over a init solution, apply a local search first-fit based to intensify the cost solution */
+    // TODO: Improve a bit the alg on it
+    // TODO: Maybe go to best-fit? Lees greedy iterations but more intensify
+    /**
+     * Local Search Step for a start solution
+     * Over a init solution, apply a local search first-fit based to intensify the cost solution */
     public Pair<ArrayList<ArrayList<Integer>>, Double> computeLocalSearchStep(NetPlan np, Random rng, int N, int M, double C, ArrayList<ArrayList<Integer>> greedySolution){
         /* Parsing some values */
         double costBestSolution = Double.MAX_VALUE;
