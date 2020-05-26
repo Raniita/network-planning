@@ -79,7 +79,12 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
         /* Pulling my specific algorithm parameters */
         final double alpha = Double.parseDouble(algorithmParams.get("alpha"));
-        final boolean verbose = Boolean.parseBoolean(algorithmParams.get("verbose"));
+        boolean verbose;
+        if(algorithmParams.get("verbose").equals("1")){
+            verbose = true;
+        } else {
+            verbose = false;
+        }
 
         // TODO: Maybe insert seed as a parameter?
         /* Init random solution */
@@ -95,9 +100,12 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         Pair<ArrayList<ArrayList<Integer>>, Double> bestSolutionEncoded = Pair.of(initSolution, costBestSolutionFoundByTheAlgorithm);
 
         /* Main Loop. Stopped when the maximum execution time is reached */
+        long averageTime = 0;
+        int iterations = 0;
         if(verbose) System.out.println("Starting GRASP main loop...\n");
         while(System.nanoTime() < algorithmEndTime){
-            // TODO: Add a temporary ping-pong time checker to estimate the average time over a greedy iteration. Trying to be fine with the 60secs
+            final long startIterationTime = System.nanoTime();
+            iterations++;
 
             /* Executing greedy randomized step => RCL controlled with alpha parameter
              * Output: Pair of encodedSolution and costEncodedSolution
@@ -135,6 +143,16 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
             /* RESET! Go to the init topology */
             np.removeAllLinks();
+
+            // Checking if we have time to execute one more iteration
+            final long finishIterationTime = System.nanoTime();
+            averageTime += finishIterationTime - startIterationTime;
+            if((finishIterationTime + averageTime/iterations) >= algorithmEndTime){
+                // No time for other iteration. Finishing the execution
+                System.out.println("No time left, skipping");
+                System.out.println("Average time of a iteration: "+ averageTime/iterations);
+                break;
+            }
         }
 
         /* Printing the bestSolution Found! */
@@ -259,7 +277,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
     /** Help function to print a encoded solution*/
     public static void printCodificationSolution(ArrayList<ArrayList<Integer>> costCod){
         for(int i=0; i<costCod.size();i++){
-            System.out.println("\nAccess Node: "+i);
+            System.out.println("Access Node: "+i);
             for(int j=0;j < costCod.get(i).size();j++){
                 System.out.print("Core "+(j+1)+ ": " + costCod.get(i).get(j)+" ");
             }
