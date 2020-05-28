@@ -102,7 +102,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         /* Main Loop. Stopped when the maximum execution time is reached */
         long averageTime = 0;
         int iterations = 0;
-        if(verbose) System.out.println("Starting GRASP main loop...\n");
+        System.out.println("Starting GRASP main loop...");
         while(System.nanoTime() < algorithmEndTime){
             final long startIterationTime = System.nanoTime();
             iterations++;
@@ -113,7 +113,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             Pair<ArrayList<ArrayList<Integer>>, Double> greedySolution = computeGreedyRandomized(np, rng, M, C, N, alpha, verbose);
 
             // Printing best cost of GreedySolution
-            if(verbose) System.out.println("costGreedySolution: "+ greedySolution.getSecond());
+            System.out.println("\ncostGreedySolution: "+ greedySolution.getSecond());
             //printCodificationSolution(greedySolution.getFirst());
 
             /* Executing local search step based on the best greedy solution
@@ -122,13 +122,13 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             Pair<ArrayList<ArrayList<Integer>>, Double> localSearchSolution = computeLocalSearchStep(np, rng, M, C, N, greedySolution.getFirst(), verbose);
 
             // Printing best cost of the localSearch output
-            if(verbose) System.out.println("costLocalSearch: "+localSearchSolution.getSecond());
+            System.out.println("costLocalSearch: "+localSearchSolution.getSecond());
             //printCodificationSolution(localSearchSolution.getFirst());
 
             /* Checking if the GRASP iteration improve the best solution found ever */
             if(localSearchSolution.getSecond() < costBestSolutionFoundByTheAlgorithm){
                 // Updating best solution
-                if(verbose) System.out.println("Cost improved OwO!! Updating bestSolution.");
+                System.out.println("Cost improved OwO!! Updating bestSolution.");
                 bestSolutionFoundByTheAlgorithm = np.copy();
                 costBestSolutionFoundByTheAlgorithm = localSearchSolution.getSecond();
 
@@ -239,7 +239,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         res.add(Triple.of("C", "100", "The cost of a core node."));
         res.add(Triple.of("maxExecTimeSecs", "60", "Maximum running time of the algorithm."));
         res.add(Triple.of("alpha", "0.25", "Randomized parameter to GRASP based on RCL"));
-        res.add(Triple.of("verbose", "1", "Print debug messages on output console (0 == disable, 1 == enable)"));
+        res.add(Triple.of("verbose", "0", "Print debug messages on output console (0 == disable, 1 == enable)"));
         return res;
     }
 
@@ -261,7 +261,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
     /**
      * Encoding part by part the solution. Given a encoded solution, add CoreNode to an AccessNode
      * First approach to costCodification encoding solution
-     * Source: (https://www.geeksforgeeks.org/graph-and-its-representations/) */
+     * Inspiration: (https://www.geeksforgeeks.org/graph-and-its-representations/) */
     public void add2CodificationSolution(ArrayList<ArrayList<Integer>> costCod, int index, int nodeIndex){
         costCod.get(index).add(nodeIndex);
     }
@@ -276,6 +276,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
     /** Help function to print a encoded solution*/
     public static void printCodificationSolution(ArrayList<ArrayList<Integer>> costCod){
+        System.out.println("\nPrinting encodedSolution: ");
         for(int i=0; i<costCod.size();i++){
             System.out.println("Access Node: "+i);
             for(int j=0;j < costCod.get(i).size();j++){
@@ -289,6 +290,10 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
      * Given a Encoded Solution, add to NetPlan all the links listed on it.
      * Util to restore the topology over the info of the solution encoded */
     public void recoverTopologyCostCodification(NetPlan np, ArrayList<ArrayList<Integer>> costCod){
+        // Previous, remove all links on canvas
+        np.removeAllLinks();
+
+        // Creating the links stored inside the encoded solution
         for(Node accessLocation : np.getNodes()){
             final List<Integer> coreNodes = getPairCoreIndexCodificationSolution(costCod, accessLocation.getIndex());
             addLink(accessLocation, np.getNode(coreNodes.get(0)));
@@ -300,7 +305,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
      * Function to encode the solution of the algorithm
      * In args -> NetPlan object and number of nodes
      * Output, a solution encoded. 1 AccessNode -> 2 CoreNode associated
-     * Source: (https://www.baeldung.com/java-graphs [Adjacency List]) (https://www.baeldung.com/java-multi-dimensional-arraylist) */
+     * Inspiration: (https://www.baeldung.com/java-graphs [Adjacency List]) (https://www.baeldung.com/java-multi-dimensional-arraylist) */
     public ArrayList<ArrayList<Integer>> encodeSolution(NetPlan np, int N){
         // Init the empty solution
         ArrayList<ArrayList<Integer>> solution = new ArrayList<>(N);
@@ -345,10 +350,11 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
     /** Greedy Randomized Logic, using RCL decision
      * Input: NetPlan np
      *        Random rng,
-     *        N number of nodes,
-     *        alpha as 0 to 1 value to randomize the alg,
      *        M max of connection on core nodes,
      *        C cost of core node
+     *        N number of nodes,
+     *        alpha as 0 to 1 value to randomize the alg,
+     *        verbose == debug
      * Output: Pair of values => encoded solution (first) cost of encoded solution (second) */
     public Pair<ArrayList<ArrayList<Integer>>,Double> computeGreedyRandomized(NetPlan np, Random rng, int M, double C, int N, double alpha, boolean verbose){
         /* Greedy Randomized (diversify)
@@ -521,7 +527,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
             if(verbose) System.out.println(eliminatedCoreNodes.toString());
 
-            if(verbose) System.out.println("Condiciones del while:");
+            if(verbose) System.out.println("While condition:");
             //nodeSequence.size() < N | notVisitedCoreNode.isEmpty() | notVisitedCoreNode.size() == 0 | notVisitedAccessNode.size() == 0
             if(verbose) System.out.println("nodeSeq: "+nodeSequence.size()+" notVisitedCore: "+notVisitedCoreNode.isEmpty()+" notVisitedCoreSize: "+notVisitedCoreNode.size()+" notVisitedAccessSize: "+notVisitedAccessNode.size());
 
@@ -541,15 +547,26 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
     }
 
     // TODO: Improve a bit the alg on it
-    // TODO: Maybe go to best-fit? Lees greedy iterations but more intensify
+    // TODO: Maybe go to best-fit? Lees greedy iterations but more intensify [i dont think so...]
     /**
      * Local Search Step for a start solution
-     * Over a init solution, apply a local search first-fit based to intensify the cost solution */
+     * Over a init solution, apply a local search first-fit based to intensify the cost solution
+     * Input: NetPlan np
+     *        Random rng,
+     *        M max of connection on core nodes,
+     *        C cost of core node
+     *        N number of nodes,
+     *        greedySolution as encoded solution of greedy
+     *        verbose == debug
+     * Output: Pair of values => encoded solution (first) cost of encoded solution (second) */
     public Pair<ArrayList<ArrayList<Integer>>, Double> computeLocalSearchStep(NetPlan np, Random rng, int M, double C, int N, ArrayList<ArrayList<Integer>> greedySolution, boolean verbose){
         /* Parsing some values */
         double costBestSolution = Double.MAX_VALUE;
 
-        // Shuffle Nodes. More intensification
+        // Init the encoded solution
+        ArrayList<ArrayList<Integer>> localSearchSolution = encodeSolution(np, N);
+
+        // Shuffle Nodes. More diversity
         final List<Node> shuffleNodes = new ArrayList<>(np.getNodes());
         Collections.shuffle(shuffleNodes, rng);
 
@@ -567,40 +584,49 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
                 final Node coreNode2Original = accessNode.getOutgoingLinks().size() == 1 ? accessNode : accessNode.getOutgoingLinks().last().getDestinationNode();
 
                 // We can change both coreNodes
-                // Neighborn == Changing 1 of the cores of the solution.
+                // Neighbor == Changing 1 of the cores of the solution.
                 for(Node originalCoreNode : new Node[]{coreNode1Original, coreNode2Original}){
                     // Remove the current link (access -> core)
                     final boolean isSelfLocation = accessNode.equals(originalCoreNode);
                     final Link removedLink = isSelfLocation ? null : np.getNodePairLinks(accessNode,originalCoreNode, false).first();
 
+                    // Removing actual link
                     if(removedLink != null) removedLink.remove();
+
+                    // Trying neighbor solutions
                     for(Node tryCore : shuffleNodes){
                         if(tryCore.equals(coreNode1Original)) continue;
                         if(tryCore.equals(coreNode2Original)) continue;
                         final Optional<Link> newLink = addLink(accessNode, tryCore);
                         final double costNeighbor = evaluateDesign(np, M, C).getFirst();
+                        if(verbose) System.out.println("costNeighbor: "+ costNeighbor);
 
-                        // First-Fit
+                        // First-Fit => Removing the continue == best-fit (too much time per iteration)
                         if(costNeighbor < costBestSolution){
                             costBestSolution = costNeighbor;
+                            // Encoding the actual best solution!
+                            localSearchSolution = encodeSolution(np, N);
                             solutionWasImproved = true;
 
                             // breaking the local-search
-                            // dislike this uwu
                             continue localSearchLoop;
                         }
+                        // Using optional!
                         if(newLink.isPresent()) newLink.get().remove();
                     }
 
-                    // Need to go back
+                    // Need to go back, reverting change
                     if(removedLink != null) addLink(accessNode, originalCoreNode);
                 }
             }
+
+            // Best-fit => No sense use best-fit, too much time on each iteration or low improve range :(
+            //solutionWasImproved = true;
         }
         /* LOCAL SEARCH STEP FINISHED */
 
-        // Saving the encoded solution
-        ArrayList<ArrayList<Integer>> localSearchSolution = encodeSolution(np, N);
+        // Recover the best solution topology of encoded solution
+        recoverTopologyCostCodification(np, localSearchSolution);
         final double localSearchCost = evaluateDesign(np, M, C).getFirst();
 
         // Returning the pair of encoded solution and cost
