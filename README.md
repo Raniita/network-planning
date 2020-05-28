@@ -7,7 +7,7 @@ Given the topology of the problem;
 Let i = 1;...;N a set of locations for a node. In each location i:
 * There always exists exactly one access node.
 * There can be any number zi = 0, 1, 2,... of core nodes, placed in that location.
-Each access node must be connected to exactly two core nodes in dierent locations (one of them
+Each access node must be connected to exactly two core nodes in diferent locations (one of them
 can be the same location as the access node). The cost of each access link is equal to the Euclidean
 distance between the locations of the access and core node.
 
