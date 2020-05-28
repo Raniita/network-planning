@@ -1,6 +1,5 @@
 package caseStudy;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 import com.net2plan.interfaces.networkDesign.*;
@@ -157,7 +156,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
 
         /* Printing the bestSolution Found! */
         System.out.println("Finished!. Cost: "+bestSolutionEncoded.getSecond());
-        printCodificationSolution(bestSolutionEncoded.getFirst());
+        printEncodedSolution(bestSolutionEncoded.getFirst());
 
         /* Return the solution in bestSolutionFoundByTheAlgorithm */
         final double totalRunningTimeInSeconds = (System.nanoTime() - algorithmStartTime) / 1e9;
@@ -262,12 +261,12 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
      * Encoding part by part the solution. Given a encoded solution, add CoreNode to an AccessNode
      * First approach to costCodification encoding solution
      * Inspiration: (https://www.geeksforgeeks.org/graph-and-its-representations/) */
-    public void add2CodificationSolution(ArrayList<ArrayList<Integer>> costCod, int index, int nodeIndex){
+    public void add2EncodedSolution(ArrayList<ArrayList<Integer>> costCod, int index, int nodeIndex){
         costCod.get(index).add(nodeIndex);
     }
 
     /** Help function to get the Core Nodes associated to a Access Node (given a encoded solution and the AccessIndex) */
-    public List<Integer> getPairCoreIndexCodificationSolution(ArrayList<ArrayList<Integer>> costCod, int accessNodeIndex){
+    public List<Integer> getPairCoreIndexEncodedSolution(ArrayList<ArrayList<Integer>> costCod, int accessNodeIndex){
         final int firstNode =  costCod.get(accessNodeIndex).get(0);
         final int secondNode = costCod.get(accessNodeIndex).get(1);
 
@@ -275,7 +274,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
     }
 
     /** Help function to print a encoded solution*/
-    public static void printCodificationSolution(ArrayList<ArrayList<Integer>> costCod){
+    public static void printEncodedSolution(ArrayList<ArrayList<Integer>> costCod){
         System.out.println("\nPrinting encodedSolution: ");
         for(int i=0; i<costCod.size();i++){
             System.out.println("Access Node: "+i);
@@ -289,13 +288,13 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
     /**
      * Given a Encoded Solution, add to NetPlan all the links listed on it.
      * Util to restore the topology over the info of the solution encoded */
-    public void recoverTopologyCostCodification(NetPlan np, ArrayList<ArrayList<Integer>> costCod){
+    public void recoverTopologyByEncodedSolution(NetPlan np, ArrayList<ArrayList<Integer>> costCod){
         // Previous, remove all links on canvas
         np.removeAllLinks();
 
         // Creating the links stored inside the encoded solution
         for(Node accessLocation : np.getNodes()){
-            final List<Integer> coreNodes = getPairCoreIndexCodificationSolution(costCod, accessLocation.getIndex());
+            final List<Integer> coreNodes = getPairCoreIndexEncodedSolution(costCod, accessLocation.getIndex());
             addLink(accessLocation, np.getNode(coreNodes.get(0)));
             addLink(accessLocation, np.getNode(coreNodes.get(1)));
         }
@@ -320,8 +319,8 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             final int secondCoreLocation = accessNodeLocation.getOutgoingLinks().size() == 1? accessNodeLocation.getIndex() : accessNodeLocation.getOutgoingLinks().last().getDestinationNode().getIndex();
 
             // Codification solution
-            add2CodificationSolution(solution, accessNodeLocation.getIndex(), firstCoreLocation);
-            add2CodificationSolution(solution, accessNodeLocation.getIndex(), secondCoreLocation);
+            add2EncodedSolution(solution, accessNodeLocation.getIndex(), firstCoreLocation);
+            add2EncodedSolution(solution, accessNodeLocation.getIndex(), secondCoreLocation);
         }
 
         return solution;
@@ -505,7 +504,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
             addLink(accessNode, np.getNode(nextCoreNode1));
 
             // Adding to encoded solution
-            add2CodificationSolution(greedySolution, accessNode.getIndex(), nextCoreNode1);
+            add2EncodedSolution(greedySolution, accessNode.getIndex(), nextCoreNode1);
             if(verbose) System.out.println("Solution added, coreIndex: " + nextCoreNode1);
 
             // Checking if coreNode2 exists (autoloop maybe)
@@ -521,7 +520,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
                 addLink(accessNode, np.getNode(nextCoreNode2));
 
                 // Adding to encoded solution
-                add2CodificationSolution(greedySolution, accessNode.getIndex(), nextCoreNode2);
+                add2EncodedSolution(greedySolution, accessNode.getIndex(), nextCoreNode2);
                 if(verbose) System.out.println("Solution added, coreIndex: " + nextCoreNode2);
             }
 
@@ -539,7 +538,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
          }
          /* GREEDY RANDOMIZED FINISHED */
 
-        if(verbose) printCodificationSolution(greedySolution);
+        if(verbose) printEncodedSolution(greedySolution);
 
         // Prepare the return solution!
         final double greedyCost = evaluateDesign(np, M, C).getFirst();
@@ -626,7 +625,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         /* LOCAL SEARCH STEP FINISHED */
 
         // Recover the best solution topology of encoded solution
-        recoverTopologyCostCodification(np, localSearchSolution);
+        recoverTopologyByEncodedSolution(np, localSearchSolution);
         final double localSearchCost = evaluateDesign(np, M, C).getFirst();
 
         // Returning the pair of encoded solution and cost
