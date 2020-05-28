@@ -55,7 +55,7 @@ import com.net2plan.utils.Triple;
 
 /** This is a template for the students, with an skeleton for solving the node location problem of the use case 2019-20.
  */
-public class NodeLocation_EnriqueFer implements IAlgorithm {
+public class NodeLocation_FernandezSanchez implements IAlgorithm {
     @Override
     public String executeAlgorithm(NetPlan np, Map<String, String> algorithmParams, Map<String, String> n2pParams)
     {
