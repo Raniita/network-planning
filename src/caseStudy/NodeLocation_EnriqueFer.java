@@ -238,7 +238,7 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
         res.add(Triple.of("M", "5", "Maximum number of access nodes that can be connceted to a single core node."));
         res.add(Triple.of("C", "100", "The cost of a core node."));
         res.add(Triple.of("maxExecTimeSecs", "60", "Maximum running time of the algorithm."));
-        res.add(Triple.of("alpha", "0.25", "Randomized parameter to GRASP based on RCL"));
+        res.add(Triple.of("alpha", "0.45", "Randomized parameter to GRASP based on RCL"));
         res.add(Triple.of("verbose", "0", "Print debug messages on output console (0 == disable, 1 == enable)"));
         return res;
     }
@@ -599,11 +599,11 @@ public class NodeLocation_EnriqueFer implements IAlgorithm {
                         if(tryCore.equals(coreNode2Original)) continue;
                         final Optional<Link> newLink = addLink(accessNode, tryCore);
                         final double costNeighbor = evaluateDesign(np, M, C).getFirst();
-                        if(verbose) System.out.println("costNeighbor: "+ costNeighbor);
 
                         // First-Fit => Removing the continue == best-fit (too much time per iteration)
                         if(costNeighbor < costBestSolution){
                             costBestSolution = costNeighbor;
+                            if(verbose) System.out.println("costBestSolution: "+ costBestSolution);
                             // Encoding the actual best solution!
                             localSearchSolution = encodeSolution(np, N);
                             solutionWasImproved = true;
